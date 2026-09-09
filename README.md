@@ -1,4 +1,6 @@
-# MohamedKhan91
+# NOK Learning Hub Assessment Center
+
+https://github.com/MohamedKhan91/NOK-Learning-Hub-Assessment-Center
 
 Public site: **NOK Learning Hub Assessment Center** — one self-contained `index.html` (a seven-part journey of self-discovery: EQ, career & CV, leadership, teams, a four-instrument psychometric assessment centre, the coaching path, team games — with dossier, certificate and a trainer dashboard that collects every trainee's results).
 
