@@ -533,7 +533,7 @@ footer.site a:hover{color:#000;}
 </main>
 
 <div id="toastZone"></div>
-<footer class="site"><p style="margin:0;">NOK Learning Hub Assessment Center — reflective development tools, not clinical or diagnostic instruments. Progress is stored privately in this browser only.</p><p style="margin:8px 0 0;"><a href="https://drive.google.com/drive/folders/1gpVtc_sWvIn2S9zGActVNl8WmJoOoQ9g" target="_blank" rel="noopener">Course materials on Google Drive ↗</a></p></footer>
+<footer class="site"><p style="margin:0;">NOK Learning Hub Assessment Center — reflective development tools, not clinical or diagnostic instruments. Progress is stored privately in this browser only. This copy is served from NOK Learning Hub \u00b7 Google Drive — save the file and open it in any browser; everything works offline too.</p><p style="margin:8px 0 0;"><a href="https://drive.google.com/drive/folders/1gpVtc_sWvIn2S9zGActVNl8WmJoOoQ9g" target="_blank" rel="noopener">Course materials on Google Drive ↗</a></p></footer>
 
 <script>
 /* =========================================================================
@@ -4276,7 +4276,7 @@ function renderDossier(el0){
   }
   B("dsPrint", ()=>window.print());
   B("dsCertOnly", ()=>{ document.body.classList.add("only-cert"); window.print(); setTimeout(()=>document.body.classList.remove("only-cert"),600); });
-  B("dsCode", ()=>{ const code=makeShareCode(); if(navigator.clipboard){ navigator.clipboard.writeText(code).then(()=>toast("Share code copied — send it to your trainer",0)).catch(()=>toast(code,0)); } else { prompt("Copy your share code:", code); } });
+  B("dsCode", ()=>{ const code=makeShareCode(); if(navigator.clipboard){ navigator.clipboard.writeText(code).then(()=>toast("Share code copied — send it to your trainer",0)).catch(()=>prompt("Copy your share code:", code)); } else { prompt("Copy your share code:", code); } });
   el0.querySelectorAll("[data-cert]").forEach(inp=>{ inp.oninput=()=>{ App.cert[inp.dataset.cert]=inp.value; save(); }; });
   B("dsCopy", ()=>{
     const data = JSON.stringify({name:App.name, xp:App.xp, level:L.title, badges:Object.keys(App.badges), results:App.results, games:Object.keys(App.games), coach:{pre:App.coach.pre,post:App.coach.post,ladder:App.coach.ladder,missions:App.coach.missions?Object.values(App.coach.missions).reduce((n,a)=>n+a.filter(m=>m.done).length,0):0}}, null, 1);
@@ -4739,8 +4739,9 @@ function myTrackState(){
     leadership:App.done.leadership, team:App.done.team&&App.done.conflict, center:App.done.hogan&&App.done.ppa&&App.done.big5&&App.done.disc,
     coach:coachRank()>=2, games:Object.keys(App.games||{}).filter(k=>App.games[k]&&App.games[k].done).length, dossier:App.done.dossier};
 }
+function traineeUid(){ if(!App.uid){ App.uid="t"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); save(); } return App.uid; }
 function makeShareCode(){
-  const payload={v:1,n:App.name||"(no name)",x:App.xp,d:new Date().toISOString().slice(0,10),
+  const payload={v:1,u:traineeUid(),n:App.name||"(no name)",x:App.xp,d:new Date().toISOString().slice(0,10),
     b:Object.keys(App.badges||{}).length, bk:Object.keys(App.badges||{}),
     g:GAME_DEFS.filter(g=>App.games[g.id]&&App.games[g.id].done).map(g=>g.id),
     cr:coachRank(), t:myTrackState()};
@@ -4805,7 +4806,7 @@ function renderTrainer(el0){
   };
   el0.querySelector("#myCode").onclick=()=>{
     const code=makeShareCode(); el0.querySelector("#myBox").value=code;
-    (navigator.clipboard? navigator.clipboard.writeText(code).then(()=>toast("Share code copied — send it to your trainer",0)).catch(()=>{}) : toast("Code in the box below — select & copy",0));
+    (navigator.clipboard? navigator.clipboard.writeText(code).then(()=>toast("Share code copied — send it to your trainer",0)).catch(()=>{ el0.querySelector("#myBox").focus(); el0.querySelector("#myBox").select(); toast("Copying blocked by browser — the code is selected below, press Ctrl/Cmd+C",0); }) : toast("Code in the box below — select & copy",0));
   };
   function draw(){
     const list = rosterGet();
@@ -5014,6 +5015,55 @@ RAIL.push(
   {id:"dossier", l:"Dossier"}
 );
 
+/* ---------------- Google Drive sync (Apps Script bridge) ----------------- */
+let _dsTimer=null;
+function gasUrl(){ try{ const c=JSON.parse(localStorage.getItem("nok_gas_v1")||"null"); if(c&&c.url) return c.url.trim(); }catch(e){} return ""; }
+async function driveSync(force){
+  const u=gasUrl(); if(!u) return false;
+  try{
+    const st=JSON.parse(localStorage.getItem("nok_gas_sync_v1")||"{}");
+    if(!force && st.xp===App.xp) return false;
+    const r=await fetch(u,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"save",code:makeShareCode()})});
+    if(r.ok){ localStorage.setItem("nok_gas_sync_v1",JSON.stringify({xp:App.xp,t:Date.now()})); return true; }
+    return false;
+  }catch(e){ return false; }
+}
+function tryDriveSync(){ if(_dsTimer||!gasUrl()) return; _dsTimer=setTimeout(()=>{ _dsTimer=null; driveSync(false); },4000); }
+(function(){ const _a=award; award=function(k,x,b,n){ const r=_a(k,x,b,n); try{ tryDriveSync(); }catch(e){} return r; }; })();
+const GAS_CARD_HTML =
+  '<div class="card" style="margin-top:14px;"><h3>5 · Google Drive sync — records land in your sheet</h3>'+
+  '<p class="small muted">Paste the web-app URL of the free <strong>NOK Drive Sync</strong> Apps Script (setup sheet: <code>NOK Trainee Records</code> inside your Drive folder). Once saved here, every milestone this trainee reaches auto-syncs to your Drive sheet; on the trainer side, "Pull" refreshes the whole roster. Until it is configured, share codes keep working — nothing breaks.</p>'+
+  '<div class="lab-grid" style="grid-template-columns:1fr auto;align-items:center;"><input id="gsUrl" class="lab-in" placeholder="https://script.google.com/macros/s/XXXX/exec"><div style="display:flex;gap:8px;"><button class="btn btn-outline btn-sm" id="gsSave">Save &amp; test</button><button class="btn btn-primary btn-sm" id="gsPull">Pull roster from Drive ↓</button></div></div>'+
+  '<p class="small muted" id="gsStatus"></p></div>';
+function wireGas(el0){
+  const inp=el0.querySelector("#gsUrl"), st=el0.querySelector("#gsStatus");
+  inp.value=(function(){ try{ const c=JSON.parse(localStorage.getItem("nok_gas_v1")||"null"); return (c&&c.url)||""; }catch(e){ return ""; } })();
+  el0.querySelector("#gsSave").onclick=()=>{
+    const u=inp.value.trim();
+    if(u) localStorage.setItem("nok_gas_v1",JSON.stringify({url:u})); else localStorage.removeItem("nok_gas_v1");
+    if(!u){ st.textContent="Cleared — share-code mode only."; return; }
+    st.textContent="Testing…";
+    fetch(u+"?cmd=list").then(r=>r.json()).then(j=>{ st.textContent=j&&j.ok?("Connected ✓ — Drive sheet has "+(j.rows||0)+" trainee row(s). Auto-sync is live on this device."):"Saved, but the reply was unexpected: check the URL & that the script is deployed for \"Anyone\"."; }).catch(e=>{ st.textContent="Could not reach the endpoint ("+e.message+"). Check the URL and that the script is deployed with access: Anyone."; });
+  };
+  el0.querySelector("#gsPull").onclick=async ()=>{
+    const u=gasUrl(); if(!u){ st.textContent="Paste & save the web-app URL first."; return; }
+    st.textContent="Pulling…";
+    try{
+      const j=await (await fetch(u+"?cmd=list")).json();
+      if(!j||!j.ok) throw new Error((j&&j.error)||"bad reply");
+      const cur=rosterGet(); let n=0;
+      (j.codes||[]).forEach(code=>{ try{ const p=parseShareCode(code); p._ts=Date.now(); if(!cur.some(r=>r.u&&p.u? r.u===p.u : (r.n===p.n&&r.d===p.d))){ cur.push(p); n++; } else { cur=cur.map(r=>(r.u===p.u||(!p.u&&r.n===p.n&&r.d===p.d))?p:r); } }catch(e){} });
+      rosterSet(cur); st.textContent="Pulled "+((j.codes||[]).length)+" row(s) from Drive, merged "+n+" new ✓"; renderTrainer(el0);
+    }catch(e){ st.textContent="Pull failed: "+e.message; }
+  };
+}
+(function(){ const _rt=renderTrainer; renderTrainer=function(el0){ _rt(el0); el0.insertAdjacentHTML("beforeend",GAS_CARD_HTML); wireGas(el0); }; })();
+(function(){ const _rd=renderDossier; renderDossier=function(el0){ _rd(el0);
+  const ref=el0.querySelector("#dsCode"); if(!ref) return;
+  const b=document.createElement("button"); b.className="btn btn-outline btn-sm";
+  b.textContent = gasUrl()? "Send my results to trainer Drive ↑" : "Drive sync not set on this device";
+  b.onclick=()=>{ driveSync(true).then(ok=>toast(ok?"Sent ✓ — you are on the trainer\u2019s Drive sheet":"No Drive link on this device — copy your share code instead",0)); };
+  ref.insertAdjacentElement("afterend",b); }; })();
 registerScreen("eqhub", startEqHub);
 registerScreen("careerhub", startCareerHub);
 registerScreen("teamhub", startTeamHub);
