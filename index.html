@@ -497,6 +497,12 @@ h3{font-size:18px;font-weight:700;line-height:1.35;}
 .ta{font-size:14.5px;line-height:1.6;}
 .roster td,.roster th{line-height:1.45;}
 @media (max-width:640px){ .hero{padding-left:22px;padding-right:22px;} .top-nav button{font-size:12px;padding:6px 8px;} }
+
+/* NOK Drive button */
+.btn-drive{border:1px solid rgba(255,255,255,.5);color:#fff;background:rgba(255,255,255,.07);text-decoration:none;display:inline-flex;align-items:center;}
+.btn-drive:hover{background:#fff;color:#172E55;border-color:#fff;}
+footer.site a{color:#172E55;font-weight:700;text-decoration:underline;text-underline-offset:3px;}
+footer.site a:hover{color:#000;}
 </style>
 </head>
 <body>
@@ -527,7 +533,7 @@ h3{font-size:18px;font-weight:700;line-height:1.35;}
 </main>
 
 <div id="toastZone"></div>
-<footer class="site">NOK Learning Hub Assessment Center — reflective development tools, not clinical or diagnostic instruments. Progress is stored privately in this browser only.</footer>
+<footer class="site"><p style="margin:0;">NOK Learning Hub Assessment Center — reflective development tools, not clinical or diagnostic instruments. Progress is stored privately in this browser only.</p><p style="margin:8px 0 0;"><a href="https://drive.google.com/drive/folders/1gpVtc_sWvIn2S9zGActVNl8WmJoOoQ9g" target="_blank" rel="noopener">Course materials on Google Drive ↗</a></p></footer>
 
 <script>
 /* =========================================================================
@@ -4927,6 +4933,7 @@ renderHome = function renderHome(el0){
     '<div class="name-row">'+
       '<input id="nameInput" placeholder="Your name (for the report & certificate)" value="'+esc(App.name)+'">'+
       '<button class="btn btn-gold" id="goFirst">'+(App.xp>0?"Continue the journey →":"Begin at Part 1 →")+"</button>"+
+      '<a class="btn btn-drive" href="https://drive.google.com/drive/folders/1gpVtc_sWvIn2S9zGActVNl8WmJoOoQ9g" target="_blank" rel="noopener">NOK Drive · course materials ↗</a>'+
     "</div>"+
     '<div class="stage-list" style="margin-top:22px;">'+
       '<li><span class="num">◆</span><span>You are <strong style="color:#FFFFFF;">'+esc(L.title)+"</strong> · Level "+L.idx+" · "+App.xp+" XP"+(L.next?" — "+(L.nextXp-App.xp)+" XP to "+L.next:" — peak reached")+". Progress saves in this browser automatically.</span></li>"+
